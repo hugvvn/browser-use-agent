@@ -1,23 +1,27 @@
-from playwright.sync_api import sync_playwright
-import time
+async def run_browser_use(user_task: str):
+    """
+    使用 browser-use Agent 执行通用浏览器任务
+    """
 
+    llm = ChatOpenAI(
+        model="你的模型",
+        api_key="你的API_KEY",
+        base_url="****"
+    )
 
-def display_in_browser(title: str, content: str):
-    p = sync_playwright().start()
+    # 这里先手动把中文任务改成英文提示，避免 browser-use 编码问题
+    safe_task = f"""
+    Please complete the following browser automation task.
+    If the user's task is in Chinese, understand it and execute it correctly.
 
-    browser = p.chromium.launch(headless=False)
-    page = browser.new_page()
+    User task:
+    {user_task}
+    """
 
-    page.set_content(f"""
-    <html>
-        <body>
-            <h1>{title}</h1>
-            <p>{content}</p>
-        </body>
-    </html>
-    """)
+    agent = Agent(
+        task=safe_task,
+        llm=llm,
+    )
 
-    print("浏览器已打开，按 Ctrl + C 退出")
-
-    while True:
-        time.sleep(1)
+    history = await agent.run()
+    return history.final_result()
